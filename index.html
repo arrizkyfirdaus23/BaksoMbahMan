@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Bakso Mbah Man Outlet Antheng</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#991b1b">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: #f1f5f9; color: #1e293b; font-size: 13px; }
+        
+        .app-container { min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: linear-gradient(135deg, #7f1d1d, #991b1b, #b91c1c); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .header-title h1 { font-size: 14px; font-weight: 700; }
+        .header-title p { font-size: 10px; color: #fca5a5; }
+        .user-badge { background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); }
+        .user-badge button { background: none; border: none; color: #fca5a5; font-weight: bold; cursor: pointer; }
+        .user-badge button:hover { color: white; }
+
+        main { flex: 1; padding: 12px; max-width: 480px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 12px; padding-bottom: 80px; }
+
+        .card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .text-center { text-align: center; }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: 600; font-size: 11px; color: #475569; margin-bottom: 4px; }
+        .input-control { width: 100%; padding: 10px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 12px; outline: none; transition: all 0.2s; }
+        .input-control:focus { border-color: #dc2626; background: white; box-shadow: 0 0 0 3px rgba(220,38,38,0.1); }
+
+        .btn { width: 100%; padding: 11px; border: none; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .btn-red { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
+        .btn-red:active { transform: scale(0.98); }
+        .btn-green { background: linear-gradient(135deg, #059669, #047857); color: white; }
+        .btn-green:active { transform: scale(0.98); }
+        .btn-amber { background: #d97706; color: white; }
+        .btn-slate { background: #1e293b; color: white; }
+        
+        .tab-container { display: flex; background: #e2e8f0; padding: 3px; border-radius: 12px; gap: 4px; }
+        .tab-btn { flex: 1; padding: 8px; border: none; background: transparent; font-size: 11px; font-weight: 600; color: #64748b; border-radius: 9px; cursor: pointer; }
+        .tab-btn.active { background: white; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 700; }
+      
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+        .menu-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+        .menu-item:hover { background: #fef2f2; border-color: #fca5a5; }
+        .menu-item .m-name { font-weight: 700; color: #1e293b; font-size: 11px; }
+        .menu-item .m-price { font-weight: 700; color: #dc2626; font-size: 11px; margin-top: 6px; }
+
+        .cart-list, .trx-list { max-height: 180px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+        .cart-row { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+        
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-box { background: white; width: 100%; max-width: 360px; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
+        
+        .receipt-area { padding: 14px; background: #f8fafc; margin: 12px; border-radius: 12px; border: 1px dashed #cbd5e1; font-family: monospace; font-size: 10px; overflow-y: auto; max-height: 250px; }
+        .receipt-line { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #printable-receipt, #printable-receipt * { visibility: visible; }
+            #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: white; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="app-container">
+        <header>
+            <div class="header-title">
+                <h1>Bakso Mbah Man</h1>
+                <p>Outlet Antheng</p>
+            </div>
+            <div v-if="currentUser" class="user-badge">
+                <span> {{ currentUser.nama_lengkap }}</span>
+                <button @click="logout">Keluar</button>
+            </div>
+        </header>
+
+        <main>
+
+            <div v-if="!currentUser" class="card" style="margin: auto 0;">
+                <div class="text-center" style="margin-bottom: 20px;">
+                    <div style="font-size: 28px; margin-bottom: 8px;"></div>
+                    <h2 style="font-size: 16px; font-weight: 700;">Login</h2>
+                    <p style="font-size: 11px; color: #64748b; margin-top: 4px;">Bakso Mbah Man Outlet Antheng</p>
+                </div>
+                <form @submit.prevent="handleLogin">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input v-model="loginForm.username" type="text" required class="input-control" placeholder="Contoh: Wildan">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input v-model="loginForm.password" type="password" required class="input-control" placeholder="••••">
+                    </div>
+                    <div v-if="loginError" style="color: #dc2626; font-size: 11px; text-align: center; background: #fef2f2; padding: 8px; border-radius: 8px; margin-bottom: 12px;">
+                         {{ loginError }}
+                    </div>
+                    <button type="submit" class="btn btn-red">Masuk</button>
+                </form>
+            </div>
+
+            <div v-else-if="currentUser && !activeShift" class="card" style="margin: auto 0;">
+                <div class="text-center" style="margin-bottom: 20px;">
+                    <div style="font-size: 28px; margin-bottom: 8px;"></div>
+                    <h2 style="font-size: 16px; font-weight: 700;">Buka Shift Baru</h2>
+                    <p style="font-size: 11px; color: #64748b; margin-top: 4px;">Atur modal awal hari ini</p>
+                </div>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 11px; color: #475569; border: 1px solid #e2e8f0;">
+                    <p><strong>PIC Aktif:</strong> {{ currentUser.nama_lengkap }}</p>
+                    <p style="margin-top: 2px;"><strong>Waktu Mulai:</strong> {{ currentTimestamp }}</p>
+                </div>
+                <form @submit.prevent="handleOpenShift">
+                    <div class="form-group">
+                        <label>Saldo Awal Kasir (Rp)</label>
+                        <input v-model.number="shiftForm.initialCash" type="number" required min="0" class="input-control" placeholder="Contoh: 200000">
+                    </div>
+                    <button type="submit" class="btn btn-green">Mulai Shift</button>
+                </form>
+            </div>
+
+            <div v-else style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;">
+                    <div>
+                        <p style="font-size: 10px; color: #64748b;">Modal Awal</p>
+                        <p style="font-weight: 700; font-size: 13px;">Rp {{ shiftForm.initialCash.toLocaleString() }}</p>
+                    </div>
+                    <button @click="openClosingModal" class="btn" style="width: auto; padding: 8px 12px; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; font-size: 11px;">
+                        Akhiri Shift 
+                    </button>
+                </div>
+
+                <div class="tab-container">
+                    <button @click="activeTab = 'pos'" :class="['tab-btn', activeTab === 'pos' ? 'active' : '']">🛒 Kasir & Menu</button>
+                    <button @click="activeTab = 'history'" :class="['tab-btn', activeTab === 'history' ? 'active' : '']">📜 Riwayat & Beban</button>
+                </div>
+
+                <div v-if="activeTab === 'pos'" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="card" style="padding: 12px;">
+                        <div class="tab-container" style="margin-bottom: 10px;">
+                            <button type="button" @click="orderType = 'Dine-in'" :class="['tab-btn', orderType === 'Dine-in' ? 'active' : '']">Dine In</button>
+                            <button type="button" @click="orderType = 'Takeaway'" :class="['tab-btn', orderType === 'Takeaway' ? 'active' : '']">Take Away</button>
+                        </div>
+                        <input v-model="tableOrName" type="text" :placeholder="orderType === 'Dine-in' ? 'Nomor Meja (Contoh: Meja 3)' : 'Nama Pemesan (Contoh: Bpk Budi)'" class="input-control">
+                    </div>
+
+                    <div class="card" style="padding: 12px;">
+                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Pilih Menu</h3>
+                        <div class="menu-grid">
+                            <button v-for="menu in fixedMenus" :key="menu.id" @click="addToCart(menu)" class="menu-item">
+                                <span class="m-name">{{ menu.name }}</span>
+                                <span class="m-price">Rp {{ menu.price.toLocaleString() }}</span>
+                            </button>
+                        </div>
+                    </div>
+                  
+                    <div class="card" style="padding: 12px;">
+                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px;">Menu Tambahan Bebas</h3>
+                        <div style="display: flex; gap: 6px;">
+                            <input v-model="customInput.name" type="text" placeholder="Nama item (Cth: Es Teh)" class="input-control" style="flex: 1;">
+                            <input v-model.number="customInput.price" type="number" placeholder="Harga" class="input-control" style="width: 80px;">
+                            <button @click="addCustomItem" class="btn btn-slate" style="width: auto; padding: 0 12px;">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Keranjang Belanja -->
+                    <div class="card" style="padding: 12px;">
+                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Keranjang Pesanan</h3>
+                        <div v-if="cart.length === 0" style="text-align: center; padding: 20px 0; color: #94a3b8; font-size: 11px;">Belum ada menu dipilih.</div>
+                        <div v-else class="cart-list">
+                            <div v-for="(item, index) in cart" :key="index" class="cart-row">
+                                <div>
+                                    <p style="font-weight: 700;">{{ item.name }}</p>
+                                    <p style="font-size: 10px; color: #64748b;">Rp {{ item.price.toLocaleString() }} x {{ item.qty }}</p>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-weight: 700;">Rp {{ (item.price * item.qty).toLocaleString() }}</span>
+                                    <button @click="decreaseQty(index)" style="padding: 2px 6px; background: #e2e8f0; border: none; border-radius: 4px; font-weight: bold;">-</button>
+                                    <span style="font-weight: bold;">{{ item.qty }}</span>
+                                    <button @click="increaseQty(index)" style="padding: 2px 6px; background: #e2e8f0; border: none; border-radius: 4px; font-weight: bold;">+</button>
+                                    <button @click="removeFromCart(index)" style="border: none; background: none; cursor: pointer;">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="cart.length > 0" style="border-top: 1px solid #e2e8f0; margin-top: 10px; padding-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 10px;">
+                                <span>Total:</span>
+                                <span style="color: #dc2626;">Rp {{ calculateTotal.toLocaleString() }}</span>
+                            </div>
+                            <div class="tab-container" style="margin-bottom: 8px;">
+                                <button type="button" @click="paymentMethod = 'Tunai'" :class="['tab-btn', paymentMethod === 'Tunai' ? 'active' : '']">Tunai (Cash)</button>
+                                <button type="button" @click="paymentMethod = 'QRIS'" :class="['tab-btn', paymentMethod === 'QRIS' ? 'active' : '']">QRIS</button>
+                            </div>
+                            <div v-if="paymentMethod === 'Tunai'" style="margin-bottom: 10px;">
+                                <label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Uang Diterima</label>
+                                <input v-model.number="cashReceived" type="number" class="input-control" placeholder="Nominal uang...">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-top: 4px; background: #f8fafc; padding: 6px; border-radius: 6px;">
+                                    <span>Kembalian:</span>
+                                    <span :style="{ color: calculateChange < 0 ? '#dc2626' : '#059669' }">Rp {{ calculateChange >= 0 ? calculateChange.toLocaleString() : 'Uang Kurang!' }}</span>
+                                </div>
+                            </div>
+                            <button @click="processCheckout" class="btn btn-green">Simpan Pesanan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="card" style="padding: 12px;">
+                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 8px;">Catat Pengeluaran Shift</h3>
+                        <form @submit.prevent="addExpense">
+                            <div class="form-group">
+                                <input v-model="expenseForm.name" type="text" placeholder="Keterangan (Cth: Beli Gas 3kg)" required class="input-control">
+                            </div>
+                            <div class="form-group">
+                                <input v-model.number="expenseForm.amount" type="number" placeholder="Nominal (Rp)" required min="0" class="input-control">
+                            </div>
+                            <button type="submit" class="btn btn-amber">Simpan Pengeluaran</button>
+                        </form>
+                    </div>
+
+                    <div class="card" style="padding: 12px;">
+                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px;">Daftar Pengeluaran</h3>
+                        <div v-if="expensesList.length === 0" style="text-align: center; color: #94a3b8; font-size: 11px; padding: 10px;">Belum ada pengeluaran.</div>
+                        <div v-else style="display: flex; flex-direction: column; gap: 6px;">
+                            <div v-for="exp in expensesList" :key="exp.id" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+                                <div>
+                                    <p style="font-weight: 700;">{{ exp.name }}</p>
+                                    <span style="font-size: 9px; color: #94a3b8;">{{ exp.time }}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-weight: 700; color: #dc2626;">-Rp {{ exp.amount.toLocaleString() }}</span>
+                                    <button @click="deleteExpense(exp.id)" style="border: none; background: none; cursor: pointer;">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 12px;">
+                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px;">Riwayat Transaksi Masuk</h3>
+                        <div v-if="transactionsList.length === 0" style="text-align: center; color: #94a3b8; font-size: 11px; padding: 20px;">Belum ada transaksi di shift ini.</div>
+                        <div v-else class="trx-list">
+                            <div v-for="trx in transactionsList" :key="trx.id" style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;">
+                                <div>
+                                    <p style="font-weight: 700;">{{ trx.tableOrName }} <span style="font-size: 9px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">{{ trx.orderType }}</span></p>
+                                    <p style="font-size: 9px; color: #64748b; margin-top: 2px;">Bayar: <strong>{{ trx.paymentMethod }}</strong></p>
+                                </div>
+                                <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
+                                    <div>
+                                        <p style="font-weight: 700; color: #059669;">Rp {{ trx.total.toLocaleString() }}</p>
+                                        <p style="font-size: 9px; color: #94a3b8;">{{ trx.timeStr }}</p>
+                                    </div>
+                                    <button @click="deleteTransaction(trx.id)" style="border: none; background: #fef2f2; padding: 4px 6px; border-radius: 6px; cursor: pointer;">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="isClosingModalOpen" class="modal-backdrop">
+                <div class="modal-box">
+                    <div style="background: linear-gradient(135deg, #7f1d1d, #dc2626); color: white; padding: 14px; text-align: center;">
+                        <h3 style="font-size: 13px; font-weight: 700;">Laporan Closing Shift</h3>
+                        <p style="font-size: 10px; color: #fca5a5;">Bakso Mbah Man Outlet Antheng</p>
+                    </div>
+                  
+                    <div id="printable-receipt" class="receipt-area">
+                        <div style="text-align: center; padding-bottom: 6px; border-bottom: 1px dashed #cbd5e1; margin-bottom: 6px;">
+                            <p style="font-weight: bold; font-size: 11px;">BAKSO MBAH MAN</p>
+                            <p style="font-size: 9px; color: #64748b;">Outlet Antheng</p>
+                            <p style="font-size: 9px; color: #64748b; margin-top: 2px;">{{ currentTimestamp }}</p>
+                            <p style="font-size: 9px; color: #64748b;">Kasir: {{ currentUser.nama_lengkap }}</p>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;">
+                            <div class="receipt-line"><span>Saldo Awal Kasir</span><span style="font-weight: bold;">Rp {{ shiftForm.initialCash.toLocaleString() }}</span></div>
+                            <div class="receipt-line"><span>Total Nota Terjual</span><span style="font-weight: bold;">{{ transactionsList.length }} Nota</span></div>
+                            <div class="receipt-line"><span>Pendapatan Tunai</span><span style="font-weight: bold; color: #047857;">Rp {{ closingSummary.totalCash.toLocaleString() }}</span></div>
+                            <div class="receipt-line"><span>Pendapatan QRIS</span><span style="font-weight: bold; color: #1d4ed8;">Rp {{ closingSummary.totalQris.toLocaleString() }}</span></div>
+                        </div>
+
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-bottom: 6px;">
+                            <div class="receipt-line" style="font-weight: bold;"><span>TOTAL OMZET KOTOR</span><span>Rp {{ closingSummary.grossOmzet.toLocaleString() }}</span></div>
+                            <div class="receipt-line" style="color: #dc2626;"><span>Total Pengeluaran</span><span style="font-weight: bold;">-Rp {{ closingSummary.totalExpense.toLocaleString() }}</span></div>
+                        </div>
+
+                        <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+                            <div class="receipt-line" style="font-weight: bold; font-size: 11px; color: #7f1d1d;"><span>PENDAPATAN BERSIH</span><span>Rp {{ closingSummary.netIncome.toLocaleString() }}</span></div>
+                            <div class="receipt-line" style="color: #475569;"><span>Uang Fisik di Laci</span><span style="font-weight: bold;">Rp {{ closingSummary.drawerCash.toLocaleString() }}</span></div>
+                            <div class="receipt-line" style="color: #64748b; font-size: 9px;"><span>Expense Ratio</span><span style="font-weight: bold;">{{ closingSummary.expenseRatio.toFixed(2) }}%</span></div>
+                        </div>
+
+                        <div style="text-align: center; padding-top: 8px; border-top: 1px dashed #cbd5e1; margin-top: 6px; font-size: 9px; color: #94a3b8;">
+                            --- Terima Kasih - Shift Ditutup ---
+                        </div>
+                    </div>
+
+                    
+                    <div style="padding: 12px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px;">
+                        <button @click="printReceipt" class="btn btn-slate" style="flex: 1; padding: 10px;">Cetak</button>
+                        <button @click="confirmCloseShift" class="btn btn-red" style="flex: 1; padding: 10px;">Selesai</button>
+                    </div>
+                    <button @click="isClosingModalOpen = false" style="background: none; border: none; color: #64748b; font-size: 11px; font-weight: 600; padding-bottom: 12px; cursor: pointer; text-align: center;">
+                        Batal & Kembali
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcj9XCKK10IFIyzIyKOcvJJXijTqQZq7U",
+            authDomain: "baksombahman-3f115.firebaseapp.com",
+            projectId: "baksombahman-3f115",
+            storageBucket: "baksombahman-3f115.firebasestorage.app",
+            messagingSenderId: "530837574507",
+            appId: "1:530837574507:web:134b24d8086c3069a7b22e",
+            measurementId: "G-5FKKT4ZDNS"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentUser: null,
+                    activeShift: false,
+                    activeTab: 'pos',
+                    loginForm: { username: '', password: '' },
+                    loginError: '',
+                    shiftForm: { initialCash: 0, startTime: null, startTimeStr: '' },
+                    currentTimestamp: '',
+                    
+                    orderType: 'Dine-in',
+                    tableOrName: '',
+                    paymentMethod: 'Tunai',
+                    cashReceived: 0,
+                    
+                    fixedMenus: [
+                        { id: 'bakso', name: 'Bakso Standar', price: 10000 },
+                        { id: 'pentol', name: 'Custom Pentol', price: 2000 },
+                        { id: 'siomay', name: 'Siomay', price: 1500 },
+                        { id: 'tahu', name: 'Tahu (Isi 3)', price: 2000 },
+                        { id: 'keju', name: 'Pentol Keju', price: 3000 },
+                        { id: 'gorengan', name: 'Gorengan', price: 1000 }
+                    ],
+                    customInput: { name: '', price: null },
+                    cart: [],
+
+                    expenseForm: { name: '', amount: null },
+                    expensesList: [],
+                    transactionsList: [],
+
+                    isClosingModalOpen: false
+                }
+            },
+            computed: {
+                calculateTotal() {
+                    return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                },
+                calculateChange() {
+                    return this.cashReceived - this.calculateTotal;
+                },
+                closingSummary() {
+                    let totalCash = 0;
+                    let totalQris = 0;
+                    this.transactionsList.forEach(trx => {
+                        if (trx.paymentMethod === 'Tunai') totalCash += trx.total;
+                        else if (trx.paymentMethod === 'QRIS') totalQris += trx.total;
+                    });
+                    const grossOmzet = totalCash + totalQris;
+                    const totalExpense = this.expensesList.reduce((sum, exp) => sum + exp.amount, 0);
+                    const netIncome = grossOmzet - totalExpense;
+                    const drawerCash = this.shiftForm.initialCash + totalCash - totalExpense;
+                    const expenseRatio = grossOmzet > 0 ? (totalExpense / grossOmzet) * 100 : 0;
+
+                    return { totalCash, totalQris, grossOmzet, totalExpense, netIncome, drawerCash, expenseRatio };
+                }
+            },
+            mounted() {
+                const savedUser = localStorage.getItem('bakso_user');
+                const savedShift = localStorage.getItem('bakso_shift');
+                if (savedUser) this.currentUser = JSON.parse(savedUser);
+                if (savedShift) {
+                    this.activeShift = true;
+                    const shiftData = JSON.parse(savedShift);
+                    this.shiftForm.initialCash = shiftData.initialCash;
+                    this.shiftForm.startTime = shiftData.startTime;
+                    this.shiftForm.startTimeStr = shiftData.startTimeStr;
+                    this.fetchShiftData();
+                }
+                this.updateTime();
+                setInterval(this.updateTime, 1000);
+            },
+            methods: {
+                updateTime() {
+                    const now = new Date();
+                    this.currentTimestamp = now.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'medium' });
+                },
+                async handleLogin() {
+                    this.loginError = '';
+                    try {
+                        const snapshot = await db.collection('users')
+                            .where('username', '==', this.loginForm.username)
+                            .where('password', '==', this.loginForm.password)
+                            .get();
+                        if (snapshot.empty) {
+                            this.loginError = 'Username atau Password salah!';
+                        } else {
+                            this.currentUser = snapshot.docs[0].data();
+                            localStorage.setItem('bakso_user', JSON.stringify(this.currentUser));
+                        }
+                    } catch (error) {
+                        console.error("Error login:", error);
+                        this.loginError = 'Terjadi kesalahan koneksi database.';
+                    }
+                },
+                handleOpenShift() {
+                    if (this.shiftForm.initialCash <= 0) {
+                        alert('Masukkan saldo awal kasir yang valid!');
+                        return;
+                    }
+                    this.activeShift = true;
+                    const now = new Date();
+                    const startTimeIso = now.toISOString();
+                    const startTimeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    
+                    this.shiftForm.startTime = startTimeIso;
+                    this.shiftForm.startTimeStr = startTimeStr;
+                    
+                    const shiftData = {
+                        pic: this.currentUser.username,
+                        initialCash: this.shiftForm.initialCash,
+                        startTime: startTimeIso,
+                        startTimeStr: startTimeStr
+                    };
+                    localStorage.setItem('bakso_shift', JSON.stringify(shiftData));
+                    this.fetchShiftData();
+                },
+                logout() {
+                    localStorage.removeItem('bakso_user');
+                    localStorage.removeItem('bakso_shift');
+                    this.currentUser = null;
+                    this.activeShift = false;
+                },
+                openClosingModal() {
+                    this.isClosingModalOpen = true;
+                },
+                printReceipt() {
+                    window.print();
+                },
+                confirmCloseShift() {
+                    if (confirm('Shift akan ditutup dan sesi kasir direset. Lanjutkan?')) {
+                        localStorage.removeItem('bakso_shift');
+                        this.activeShift = false;
+                        this.shiftForm.initialCash = 0;
+                        this.isClosingModalOpen = false;
+                        alert('Shift berhasil ditutup! Sampai jumpa di shift berikutnya.');
+                    }
+                },
+                fetchShiftData() {
+                    db.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+                        this.transactionsList = snapshot.docs.map(doc => {
+                            const data = doc.data();
+                            let timeStr = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja';
+                            return { id: doc.id, ...data, timeStr };
+                        });
+                    });
+
+                    db.collection('expenses').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+                        this.expensesList = snapshot.docs.map(doc => {
+                            const data = doc.data();
+                            let time = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja';
+                            return { id: doc.id, ...data, time };
+                        });
+                    });
+                },
+                addToCart(menu) {
+                    const existing = this.cart.find(item => item.id === menu.id);
+                    if (existing) existing.qty++;
+                    else this.cart.push({ id: menu.id, name: menu.name, price: menu.price, qty: 1 });
+                },
+                addCustomItem() {
+                    if (!this.customInput.name || !this.customInput.price || this.customInput.price <= 0) {
+                        alert('Masukkan nama dan harga menu tambahan dengan benar!');
+                        return;
+                    }
+                    this.cart.push({ id: 'custom_' + Date.now(), name: this.customInput.name, price: Number(this.customInput.price), qty: 1 });
+                    this.customInput.name = '';
+                    this.customInput.price = null;
+                },
+                increaseQty(index) { this.cart[index].qty++; },
+                decreaseQty(index) {
+                    if (this.cart[index].qty > 1) this.cart[index].qty--;
+                    else this.cart.splice(index, 1);
+                },
+                removeFromCart(index) { this.cart.splice(index, 1); },
+                
+                async processCheckout() {
+                    if (this.cart.length === 0) return;
+                    if (!this.tableOrName) {
+                        alert('Mohon isi Nomor Meja atau Nama Pemesan!');
+                        return;
+                    }
+                    if (this.paymentMethod === 'Tunai' && this.calculateChange < 0) {
+                        alert('Uang tunai pembeli kurang!');
+                        return;
+                    }
+
+                    const transactionData = {
+                        pic: this.currentUser.username,
+                        orderType: this.orderType,
+                        tableOrName: this.tableOrName,
+                        items: this.cart,
+                        total: this.calculateTotal,
+                        paymentMethod: this.paymentMethod,
+                        cashReceived: this.paymentMethod === 'Tunai' ? this.cashReceived : this.calculateTotal,
+                        change: this.paymentMethod === 'Tunai' ? this.calculateChange : 0,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    try {
+                        await db.collection('transactions').add(transactionData);
+                        alert('Pesanan berhasil disimpan! 🎉');
+                        this.cart = [];
+                        this.tableOrName = '';
+                        this.cashReceived = 0;
+                        this.paymentMethod = 'Tunai';
+                    } catch (error) {
+                        console.error("Gagal menyimpan transaksi:", error);
+                        alert('Gagal menyimpan transaksi ke database.');
+                    }
+                },
+                async deleteTransaction(id) {
+                    if (confirm('Yakin ingin menghapus transaksi ini? Data omzet akan disesuaikan.')) {
+                        try { await db.collection('transactions').doc(id).delete(); } catch (error) { alert('Gagal menghapus transaksi.'); }
+                    }
+                },
+                async addExpense() {
+                    if (!this.expenseForm.name || !this.expenseForm.amount) return;
+                    try {
+                        await db.collection('expenses').add({
+                            pic: this.currentUser.username,
+                            name: this.expenseForm.name,
+                            amount: Number(this.expenseForm.amount),
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        this.expenseForm.name = '';
+                        this.expenseForm.amount = null;
+                        alert('Pengeluaran berhasil dicatat!');
+                    } catch (error) { alert('Gagal menyimpan pengeluaran.'); }
+                },
+                async deleteExpense(id) {
+                    if (confirm('Hapus catatan pengeluaran ini?')) {
+                        try { await db.collection('expenses').doc(id).delete(); } catch (error) { console.error(error); }
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
