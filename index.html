@@ -282,168 +282,6 @@
                             </div>
                             <div class="tab-container" style="margin-bottom: 8px;">
                                 <button type="button" @click="paymentMethod = 'Tunai'" :class="['tab-btn', paymentMethod === 'Tunai' ? 'active' : '']">Tunai (Cash)</button>
-                                <button type="button" @click="paymentMethod = 'QR        .btn { width: 100%; padding: 11px; border: none; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .btn-red { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
-        .btn-red:active { transform: scale(0.98); }
-        .btn-green { background: linear-gradient(135deg, #059669, #047857); color: white; }
-        .btn-green:active { transform: scale(0.98); }
-        .btn-amber { background: #d97706; color: white; }
-        .btn-slate { background: #1e293b; color: white; }
-        
-        .tab-container { display: flex; background: #e2e8f0; padding: 3px; border-radius: 12px; gap: 4px; }
-        .tab-btn { flex: 1; padding: 8px; border: none; background: transparent; font-size: 11px; font-weight: 600; color: #64748b; border-radius: 9px; cursor: pointer; }
-        .tab-btn.active { background: white; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 700; }
-      
-        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
-        .menu-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
-        .menu-item:hover { background: #fef2f2; border-color: #fca5a5; }
-        .menu-item .m-name { font-weight: 700; color: #1e293b; font-size: 11px; }
-        .menu-item .m-price { font-weight: 700; color: #dc2626; font-size: 11px; margin-top: 6px; }
-
-        .cart-list, .trx-list { max-height: 180px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
-        .cart-row { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
-        
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
-        .modal-box { background: white; width: 100%; max-width: 360px; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
-        
-        .receipt-area { padding: 14px; background: #f8fafc; margin: 12px; border-radius: 12px; border: 1px dashed #cbd5e1; font-family: monospace; font-size: 10px; overflow-y: auto; max-height: 250px; }
-        .receipt-line { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        
-        @media print {
-            body * { visibility: hidden; }
-            #printable-receipt, #printable-receipt * { visibility: visible; }
-            #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: white; }
-        }
-    </style>
-</head>
-<body>
-
-    <div id="app" class="app-container">
-        <header>
-            <div class="header-title">
-                <h1>Bakso Mbah Man</h1>
-                <p>Outlet Antheng</p>
-            </div>
-            <div v-if="currentUser" class="user-badge">
-                <span> {{ currentUser.nama_lengkap }}</span>
-                <button @click="logout">Keluar</button>
-            </div>
-        </header>
-
-        <main>
-
-            <div v-if="!currentUser" class="card" style="margin: auto 0;">
-                <div class="text-center" style="margin-bottom: 20px;">
-                    <div style="font-size: 28px; margin-bottom: 8px;"></div>
-                    <h2 style="font-size: 16px; font-weight: 700;">Login</h2>
-                    <p style="font-size: 11px; color: #64748b; margin-top: 4px;">Bakso Mbah Man Outlet Antheng</p>
-                </div>
-                <form @submit.prevent="handleLogin">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input v-model="loginForm.username" type="text" required class="input-control" placeholder="Contoh: Wildan">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input v-model="loginForm.password" type="password" required class="input-control" placeholder="••••">
-                    </div>
-                    <div v-if="loginError" style="color: #dc2626; font-size: 11px; text-align: center; background: #fef2f2; padding: 8px; border-radius: 8px; margin-bottom: 12px;">
-                         {{ loginError }}
-                    </div>
-                    <button type="submit" class="btn btn-red">Masuk</button>
-                </form>
-            </div>
-
-            <div v-else-if="currentUser && !activeShift" class="card" style="margin: auto 0;">
-                <div class="text-center" style="margin-bottom: 20px;">
-                    <div style="font-size: 28px; margin-bottom: 8px;"></div>
-                    <h2 style="font-size: 16px; font-weight: 700;">Buka Shift Baru</h2>
-                    <p style="font-size: 11px; color: #64748b; margin-top: 4px;">Atur modal awal hari ini</p>
-                </div>
-                <div style="background: #f8fafc; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 11px; color: #475569; border: 1px solid #e2e8f0;">
-                    <p><strong>PIC Aktif:</strong> {{ currentUser.nama_lengkap }}</p>
-                    <p style="margin-top: 2px;"><strong>Waktu Mulai:</strong> {{ currentTimestamp }}</p>
-                </div>
-                <form @submit.prevent="handleOpenShift">
-                    <div class="form-group">
-                        <label>Saldo Awal Kasir (Rp)</label>
-                        <input v-model.number="shiftForm.initialCash" type="number" required min="0" class="input-control" placeholder="Contoh: 200000">
-                    </div>
-                    <button type="submit" class="btn btn-green">Mulai Shift</button>
-                </form>
-            </div>
-
-            <div v-else style="display: flex; flex-direction: column; gap: 12px;">
-                <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;">
-                    <div>
-                        <p style="font-size: 10px; color: #64748b;">Modal Awal</p>
-                        <p style="font-weight: 700; font-size: 13px;">Rp {{ shiftForm.initialCash.toLocaleString() }}</p>
-                    </div>
-                    <button @click="openClosingModal" class="btn" style="width: auto; padding: 8px 12px; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; font-size: 11px;">
-                        Akhiri Shift 
-                    </button>
-                </div>
-
-                <div class="tab-container">
-                    <button @click="activeTab = 'pos'" :class="['tab-btn', activeTab === 'pos' ? 'active' : '']">🛒 Kasir & Menu</button>
-                    <button @click="activeTab = 'history'" :class="['tab-btn', activeTab === 'history' ? 'active' : '']">📜 Riwayat & Beban</button>
-                </div>
-
-                <div v-if="activeTab === 'pos'" style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="card" style="padding: 12px;">
-                        <div class="tab-container" style="margin-bottom: 10px;">
-                            <button type="button" @click="orderType = 'Dine-in'" :class="['tab-btn', orderType === 'Dine-in' ? 'active' : '']">Dine In</button>
-                            <button type="button" @click="orderType = 'Takeaway'" :class="['tab-btn', orderType === 'Takeaway' ? 'active' : '']">Take Away</button>
-                        </div>
-                        <input v-model="tableOrName" type="text" :placeholder="orderType === 'Dine-in' ? 'Nomor Meja (Contoh: Meja 3)' : 'Nama Pemesan (Contoh: Bpk Budi)'" class="input-control">
-                    </div>
-
-                    <div class="card" style="padding: 12px;">
-                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Pilih Menu</h3>
-                        <div class="menu-grid">
-                            <button v-for="menu in fixedMenus" :key="menu.id" @click="addToCart(menu)" class="menu-item">
-                                <span class="m-name">{{ menu.name }}</span>
-                                <span class="m-price">Rp {{ menu.price.toLocaleString() }}</span>
-                            </button>
-                        </div>
-                    </div>
-                  
-                    <div class="card" style="padding: 12px;">
-                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px;">Menu Tambahan Bebas</h3>
-                        <div style="display: flex; gap: 6px;">
-                            <input v-model="customInput.name" type="text" placeholder="Nama item (Cth: Es Teh)" class="input-control" style="flex: 1;">
-                            <input v-model.number="customInput.price" type="number" placeholder="Harga" class="input-control" style="width: 80px;">
-                            <button @click="addCustomItem" class="btn btn-slate" style="width: auto; padding: 0 12px;">+</button>
-                        </div>
-                    </div>
-
-                    <!-- Keranjang Belanja -->
-                    <div class="card" style="padding: 12px;">
-                        <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Keranjang Pesanan</h3>
-                        <div v-if="cart.length === 0" style="text-align: center; padding: 20px 0; color: #94a3b8; font-size: 11px;">Belum ada menu dipilih.</div>
-                        <div v-else class="cart-list">
-                            <div v-for="(item, index) in cart" :key="index" class="cart-row">
-                                <div>
-                                    <p style="font-weight: 700;">{{ item.name }}</p>
-                                    <p style="font-size: 10px; color: #64748b;">Rp {{ item.price.toLocaleString() }} x {{ item.qty }}</p>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span style="font-weight: 700;">Rp {{ (item.price * item.qty).toLocaleString() }}</span>
-                                    <button @click="decreaseQty(index)" style="padding: 2px 6px; background: #e2e8f0; border: none; border-radius: 4px; font-weight: bold;">-</button>
-                                    <span style="font-weight: bold;">{{ item.qty }}</span>
-                                    <button @click="increaseQty(index)" style="padding: 2px 6px; background: #e2e8f0; border: none; border-radius: 4px; font-weight: bold;">+</button>
-                                    <button @click="removeFromCart(index)" style="border: none; background: none; cursor: pointer;">🗑️</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-if="cart.length > 0" style="border-top: 1px solid #e2e8f0; margin-top: 10px; padding-top: 10px;">
-                            <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 10px;">
-                                <span>Total:</span>
-                                <span style="color: #dc2626;">Rp {{ calculateTotal.toLocaleString() }}</span>
-                            </div>
-                            <div class="tab-container" style="margin-bottom: 8px;">
-                                <button type="button" @click="paymentMethod = 'Tunai'" :class="['tab-btn', paymentMethod === 'Tunai' ? 'active' : '']">Tunai (Cash)</button>
                                 <button type="button" @click="paymentMethod = 'QRIS'" :class="['tab-btn', paymentMethod === 'QRIS' ? 'active' : '']">QRIS</button>
                             </div>
                             <div v-if="paymentMethod === 'Tunai'" style="margin-bottom: 10px;">
@@ -454,12 +292,13 @@
                                     <span :style="{ color: calculateChange < 0 ? '#dc2626' : '#059669' }">Rp {{ calculateChange >= 0 ? calculateChange.toLocaleString() : 'Uang Kurang!' }}</span>
                                 </div>
                             </div>
-                            <button @click="processCheckout" class="btn btn-green">Simpan Pesanan</button>
+                            <button @click="processCheckout" class="btn btn-green">Simpan & Selesaikan Pesanan 🚀</button>
                         </div>
                     </div>
                 </div>
 
-                <div v-else style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- TAB 2: RIWAYAT & PENGELUARAN -->
+                <div v-if="activeTab === 'history'" style="display: flex; flex-direction: column; gap: 12px;">
                     <div class="card" style="padding: 12px;">
                         <h3 style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 8px;">Catat Pengeluaran Shift</h3>
                         <form @submit.prevent="addExpense">
@@ -469,7 +308,7 @@
                             <div class="form-group">
                                 <input v-model.number="expenseForm.amount" type="number" placeholder="Nominal (Rp)" required min="0" class="input-control">
                             </div>
-                            <button type="submit" class="btn btn-amber">Simpan Pengeluaran</button>
+                            <button type="submit" class="btn btn-amber">Simpan Pengeluaran 📉</button>
                         </form>
                     </div>
 
@@ -512,13 +351,15 @@
                 </div>
             </div>
 
+            <!-- MODAL CLOSING LAPORAN -->
             <div v-if="isClosingModalOpen" class="modal-backdrop">
                 <div class="modal-box">
                     <div style="background: linear-gradient(135deg, #7f1d1d, #dc2626); color: white; padding: 14px; text-align: center;">
                         <h3 style="font-size: 13px; font-weight: 700;">Laporan Closing Shift</h3>
                         <p style="font-size: 10px; color: #fca5a5;">Bakso Mbah Man Outlet Antheng</p>
                     </div>
-                  
+
+                    <!-- Area Resi Thermal -->
                     <div id="printable-receipt" class="receipt-area">
                         <div style="text-align: center; padding-bottom: 6px; border-bottom: 1px dashed #cbd5e1; margin-bottom: 6px;">
                             <p style="font-weight: bold; font-size: 11px;">BAKSO MBAH MAN</p>
@@ -550,13 +391,13 @@
                         </div>
                     </div>
 
-                    
+                    <!-- Tombol Aksi Closing -->
                     <div style="padding: 12px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px;">
-                        <button @click="printReceipt" class="btn btn-slate" style="flex: 1; padding: 10px;">Cetak</button>
-                        <button @click="confirmCloseShift" class="btn btn-red" style="flex: 1; padding: 10px;">Selesai</button>
+                        <button @click="printReceipt" class="btn btn-slate" style="flex: 1; padding: 10px;">🖨️ Cetak / PDF</button>
+                        <button @click="confirmCloseShift" class="btn btn-red" style="flex: 1; padding: 10px;">✅ Selesai Shift</button>
                     </div>
                     <button @click="isClosingModalOpen = false" style="background: none; border: none; color: #64748b; font-size: 11px; font-weight: 600; padding-bottom: 12px; cursor: pointer; text-align: center;">
-                        Batal & Kembali
+                        Batal / Kembali ke POS
                     </button>
                 </div>
             </div>
@@ -564,6 +405,7 @@
         </main>
     </div>
 
+    <!-- Firebase & Vue Logic -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCcj9XCKK10IFIyzIyKOcvJJXijTqQZq7U",
@@ -587,7 +429,7 @@
                 return {
                     currentUser: null,
                     activeShift: false,
-                    activeTab: 'pos',
+                    activeTab: 'dashboard', // Default tab dibuka ke Dashboard
                     loginForm: { username: '', password: '' },
                     loginError: '',
                     shiftForm: { initialCash: 0, startTime: null, startTimeStr: '' },
@@ -600,7 +442,7 @@
                     
                     fixedMenus: [
                         { id: 'bakso', name: 'Bakso Standar', price: 10000 },
-                        { id: 'pentol', name: 'Pentol', price: 2000 },
+                        { id: 'pentol', name: 'Custom Pentol', price: 2000 },
                         { id: 'siomay', name: 'Siomay', price: 1500 },
                         { id: 'tahu', name: 'Tahu (Isi 3)', price: 2000 },
                         { id: 'keju', name: 'Pentol Keju', price: 3000 },
